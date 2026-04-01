@@ -54,6 +54,12 @@
 **/.idea/**/gradle.xml
 **/.idea/**/libraries
 
+# Raw / large local data (not in repo)
+IRS.csv
+US_Crime_DataSet.csv
+realtor-data.csv
+sc091a_csv
+
 # Project 2
 proj2*/**/data/
 proj2*/**/ngordnetData2022/
