@@ -78,3 +78,12 @@ synsets1000-subgraph.txt
 # Please don't unless you know what you're doing
 *.iml
 **/.idea/**
+
+# Web app (CIS 5500 final)
+backend/.venv/
+backend/.env
+frontend/node_modules/
+frontend/dist/
+.venv-pdf/
+**/__pycache__/
+*.pyc
