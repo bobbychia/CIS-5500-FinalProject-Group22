@@ -14,15 +14,25 @@ export default function ZipDetailPage() {
   const navigate = useNavigate();
   const { zipCode } = useParams();
   const [detail, setDetail] = useState(null);
+  const [score, setScore] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch(`${API_BASE}/api/zip-areas/${encodeURIComponent(zipCode)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.statusText))))
-      .then(setDetail)
+    Promise.all([
+      fetch(`${API_BASE}/api/zip-areas/${encodeURIComponent(zipCode)}`).then((r) =>
+        r.ok ? r.json() : Promise.reject(new Error(r.statusText))
+      ),
+      fetch(`${API_BASE}/api/zip-areas/${encodeURIComponent(zipCode)}/score`).then((r) =>
+        r.ok ? r.json() : null
+      ),
+    ])
+      .then(([detailData, scoreData]) => {
+        setDetail(detailData);
+        setScore(scoreData);
+      })
       .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));
   }, [zipCode]);
@@ -65,6 +75,18 @@ export default function ZipDetailPage() {
         {detail && (
           <div className="flex flex-column gap-3">
             <h1 className="m-0 text-3xl">ZIP {detail.zip_code}</h1>
+
+            {score && (
+              <Card title="Overall Score">
+                <p className="m-0 text-2xl font-bold">
+                  {"★".repeat(score.star_rating)}{"☆".repeat(5 - score.star_rating)}
+                  {" "}({score.star_rating}/5)
+                </p>
+                <p className="m-0 text-sm text-color-secondary mt-1">
+                  Composite score: {score.final_score?.toFixed(4)} (value 50% · income 30% · schools 20%)
+                </p>
+              </Card>
+            )}
 
             <Card title="Housing (Query 7)">
               {detail.housing ? (

@@ -31,10 +31,10 @@ class ZipSearchResponse(BaseModel):
 
 class HousingSummary(BaseModel):
     zip_code: str
-    avg_housing_price: float | None = None
-    avg_house_size: float | None = None
-    avg_bedrooms: float | None = None
-    avg_bathrooms: float | None = None
+    avg_housing_price: int | None = None
+    avg_house_size: int | None = None
+    avg_bedrooms: int | None = None
+    avg_bathrooms: int | None = None
 
 
 class EducationSummary(BaseModel):
@@ -61,6 +61,12 @@ class IrsBracketRow(BaseModel):
     interest_income: float | None = None
     dividend_income: float | None = None
     capital_gain: float | None = None
+
+
+class ZipScoreResponse(BaseModel):
+    zip_code: str
+    final_score: float | None = None
+    star_rating: int | None = None
 
 
 class ZipDetailResponse(BaseModel):

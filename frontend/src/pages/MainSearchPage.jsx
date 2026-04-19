@@ -10,6 +10,8 @@ import "../App.css";
 /** Wait after last keystroke before hitting /api/zip-areas (heavy Query 1). */
 const SEARCH_DEBOUNCE_MS = 500;
 
+const PAGE_SIZE = 30;
+
 export default function MainSearchPage() {
   const [filters, setFilters] = useState({
     city: "",
@@ -23,11 +25,21 @@ export default function MainSearchPage() {
     max_schools: "",
     bed_rounds: "",
   });
+  const [page, setPage] = useState(0);
+
+  const handleFiltersChange = (newFilters) => {
+    setFilters(newFilters);
+    setPage(0);
+  };
 
   const debouncedFilters = useDebouncedValue(filters, SEARCH_DEBOUNCE_MS);
-  const query = useMemo(() => buildZipSearchQuery(debouncedFilters), [debouncedFilters]);
+  const query = useMemo(
+    () => buildZipSearchQuery({ ...debouncedFilters, offset: page * PAGE_SIZE }),
+    [debouncedFilters, page]
+  );
   const { data, loading, error } = useZipAreasSearch(query);
 
+  const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 0;
   const waitingForDebounce =
     JSON.stringify(filters) !== JSON.stringify(debouncedFilters);
 
@@ -42,7 +54,7 @@ export default function MainSearchPage() {
         <SearchNav />
       </header>
       <div className="shell">
-        <FilterSidebar filters={filters} onChange={setFilters} />
+        <FilterSidebar filters={filters} onChange={handleFiltersChange} />
         <div className="results-column">
           {waitingForDebounce && (
             <p className="hint debounce-hint" role="status">
@@ -50,6 +62,15 @@ export default function MainSearchPage() {
             </p>
           )}
           <ZipAreaList loading={loading} error={error} response={data} />
+          {totalPages > 1 && (
+            <div className="flex justify-content-center align-items-center gap-3 mt-3">
+              <button onClick={() => setPage(0)} disabled={page === 0}>«</button>
+              <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>‹</button>
+              <span>Page {page + 1} of {totalPages}</span>
+              <button onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}>›</button>
+              <button onClick={() => setPage(totalPages - 1)} disabled={page >= totalPages - 1}>»</button>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -8,6 +8,7 @@ import { useZipAreasSearch } from "../hooks/useZipAreasSearch.js";
 import "../App.css";
 
 const SEARCH_DEBOUNCE_MS = 500;
+const PAGE_SIZE = 30;
 
 export default function RecommendedSearchPage() {
   const [filters, setFilters] = useState({
@@ -21,10 +22,20 @@ export default function RecommendedSearchPage() {
     min_schools_q3: "3",
     max_schools_q3: "20",
   });
+  const [page, setPage] = useState(0);
+
+  const handleFiltersChange = (newFilters) => {
+    setFilters(newFilters);
+    setPage(0);
+  };
 
   const debouncedFilters = useDebouncedValue(filters, SEARCH_DEBOUNCE_MS);
-  const query = useMemo(() => buildRecommendedZipQuery(debouncedFilters), [debouncedFilters]);
+  const query = useMemo(
+    () => buildRecommendedZipQuery({ ...debouncedFilters, offset: page * PAGE_SIZE }),
+    [debouncedFilters, page]
+  );
   const { data, loading, error } = useZipAreasSearch(query);
+  const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 0;
 
   return (
     <div className="page layout">
@@ -37,17 +48,28 @@ export default function RecommendedSearchPage() {
         <SearchNav />
       </header>
       <div className="shell">
-        <RecommendedSidebar filters={filters} onChange={setFilters} />
-        <ZipAreaList
-          loading={loading}
-          error={error}
-          response={data}
-          idleMessage={
-            filters.search_mode == null || filters.search_mode === ""
-              ? "Choose a preset on the left to run a search."
-              : null
-          }
-        />
+        <RecommendedSidebar filters={filters} onChange={handleFiltersChange} />
+        <div className="results-column">
+          <ZipAreaList
+            loading={loading}
+            error={error}
+            response={data}
+            idleMessage={
+              filters.search_mode == null || filters.search_mode === ""
+                ? "Choose a preset on the left to run a search."
+                : null
+            }
+          />
+          {totalPages > 1 && (
+            <div className="flex justify-content-center align-items-center gap-3 mt-3">
+              <button onClick={() => setPage(0)} disabled={page === 0}>«</button>
+              <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>‹</button>
+              <span>Page {page + 1} of {totalPages}</span>
+              <button onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}>›</button>
+              <button onClick={() => setPage(totalPages - 1)} disabled={page >= totalPages - 1}>»</button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

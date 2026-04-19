@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "primereact/button";
 import { Checkbox } from "primereact/checkbox";
 import { Divider } from "primereact/divider";
 import { Dropdown } from "primereact/dropdown";
 import { InputNumber } from "primereact/inputnumber";
+import { InputText } from "primereact/inputtext";
 import { Panel } from "primereact/panel";
 import { Slider } from "primereact/slider";
 import CitySearch from "./CitySearch.jsx";
@@ -27,6 +29,16 @@ function numOrEmpty(v) {
 
 /** Homepage flexible search (Query 1 + optional refinements). */
 export default function FilterSidebar({ filters, onChange }) {
+  const navigate = useNavigate();
+  const [zipInput, setZipInput] = useState("");
+
+  function handleZipSearch(e) {
+    e.preventDefault();
+    const z = zipInput.trim();
+    if (z.length === 5 && /^\d{5}$/.test(z)) {
+      navigate(`/zip/${z}`);
+    }
+  }
   const [states, setStates] = useState([]);
   const [hist, setHist] = useState(null);
   const [priceDomain, setPriceDomain] = useState([0, 2_500_000]);
@@ -115,6 +127,17 @@ export default function FilterSidebar({ filters, onChange }) {
     <aside className="sidebar-wrap">
       <div className="flex flex-column gap-3">
         <h2 className="m-0 text-xl">Flexible search</h2>
+
+        <form onSubmit={handleZipSearch} className="flex gap-2">
+          <InputText
+            value={zipInput}
+            onChange={(e) => setZipInput(e.target.value)}
+            placeholder="Go to ZIP (e.g. 19104)"
+            maxLength={5}
+            className="w-full"
+          />
+          <Button type="submit" icon="pi pi-search" disabled={!/^\d{5}$/.test(zipInput.trim())} />
+        </form>
 
         <Panel header="Where" toggleable collapsed={false}>
           <div className="flex flex-column gap-3">

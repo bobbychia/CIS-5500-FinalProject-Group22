@@ -17,6 +17,7 @@ from app.schemas.zip_area import (
     IrsTotals,
     ZipAreaCard,
     ZipDetailResponse,
+    ZipScoreResponse,
     ZipSearchResponse,
 )
 from app.sql import milestone3 as sql
@@ -162,6 +163,183 @@ def search_zip_areas(
     )
 
 
+@router.get("/{zip_code}/score", response_model=ZipScoreResponse)
+def zip_score(zip_code: str, db: Session = Depends(require_db)):
+    """Composite score and star rating for one ZIP (value/income/school weighted)."""
+    z = zip_code.strip()
+    if not z.isdigit() or len(z) != 5:
+        raise HTTPException(status_code=400, detail="zip_code must be a 5-digit string")
+    try:
+        row = db.execute(text(sql.SQL_QUERY_SCORE), {"zip": z}).mappings().first()
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=f"Database query failed: {ex!s}") from ex
+    if not row:
+        raise HTTPException(status_code=404, detail="No score data for this ZIP")
+    return ZipScoreResponse(
+        zip_code=z,
+        final_score=float(row["final_score"]) if row.get("final_score") is not None else None,
+        star_rating=int(row["star_rating"]) if row.get("star_rating") is not None else None,
+    )
+
+
+@router.get("/scores", response_model=list[ZipScoreResponse])
+def batch_scores(
+    zips: str = Query(..., description="Comma-separated ZIP codes e.g. 19104,19120"),
+    db: Session = Depends(require_db),
+):
+    """Composite scores for multiple ZIPs in one request."""
+    zip_list = [z.strip() for z in zips.split(",") if z.strip().isdigit() and len(z.strip()) == 5]
+    if not zip_list:
+        return []
+    try:
+        rows = db.execute(text(sql.SQL_QUERY_SCORE_BATCH), {"zips": zip_list}).mappings().all()
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=f"Database query failed: {ex!s}") from ex
+    return [
+        ZipScoreResponse(
+            zip_code=str(r["zip_code"]),
+            final_score=float(r["final_score"]) if r.get("final_score") is not None else None,
+            star_rating=int(r["star_rating"]) if r.get("star_rating") is not None else None,
+        )
+        for r in rows
+    ]
+
+
+@router.get("/ranked/by-income", response_model=list[dict])
+def ranked_by_income(
+    state: str | None = Query(None),
+    city: str | None = Query(None),
+    limit: int = Query(30, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(require_db),
+):
+    """Query 5 — ZIP codes ranked by total IRS income (highest first)."""
+    try:
+        rows = db.execute(text(sql.SQL_QUERY5), {
+            "state": state.upper().strip() if state else None,
+            "city": city.strip() if city else None,
+            "limit": limit,
+            "offset": offset,
+        }).mappings().all()
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=f"Database query failed: {ex!s}") from ex
+    return [
+        {**dict(r), "total_income": round(float(r["total_income"]), 2) if r.get("total_income") is not None else None}
+        for r in rows
+    ]
+
+
+@router.get("/ranked/by-price", response_model=list[dict])
+def ranked_by_price(
+    state: str | None = Query(None),
+    city: str | None = Query(None),
+    limit: int = Query(30, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(require_db),
+):
+    """Query 6 — ZIP codes ranked by average housing price (cheapest first)."""
+    try:
+        rows = db.execute(text(sql.SQL_QUERY6), {
+            "state": state.upper().strip() if state else None,
+            "city": city.strip() if city else None,
+            "limit": limit,
+            "offset": offset,
+        }).mappings().all()
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=f"Database query failed: {ex!s}") from ex
+    return [
+        {**dict(r), "avg_housing_price": round(float(r["avg_housing_price"]), 2) if r.get("avg_housing_price") is not None else None}
+        for r in rows
+    ]
+
+
+@router.get("/{zip_code}/housing", response_model=HousingSummary)
+def zip_housing(zip_code: str, db: Session = Depends(require_db)):
+    """Query 7 — housing summary for one ZIP."""
+    z = zip_code.strip()
+    if not z.isdigit() or len(z) != 5:
+        raise HTTPException(status_code=400, detail="zip_code must be a 5-digit string")
+    try:
+        h = db.execute(text(sql.SQL_QUERY7), {"zip": z}).mappings().first()
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=f"Database query failed: {ex!s}") from ex
+    if not h:
+        raise HTTPException(status_code=404, detail="No housing data for this ZIP")
+    return HousingSummary(
+        zip_code=z,
+        avg_housing_price=round(float(h["avg_housing_price"])) if h.get("avg_housing_price") is not None else None,
+        avg_house_size=round(float(h["avg_house_size"])) if h.get("avg_house_size") is not None else None,
+        avg_bedrooms=round(float(h["avg_bedrooms"])) if h.get("avg_bedrooms") is not None else None,
+        avg_bathrooms=round(float(h["avg_bathrooms"])) if h.get("avg_bathrooms") is not None else None,
+    )
+
+
+@router.get("/{zip_code}/education", response_model=EducationSummary)
+def zip_education(zip_code: str, db: Session = Depends(require_db)):
+    """Query 8 — school summary for one ZIP."""
+    z = zip_code.strip()
+    if not z.isdigit() or len(z) != 5:
+        raise HTTPException(status_code=400, detail="zip_code must be a 5-digit string")
+    try:
+        e = db.execute(text(sql.SQL_QUERY8), {"zip": z}).mappings().first()
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=f"Database query failed: {ex!s}") from ex
+    if not e:
+        raise HTTPException(status_code=404, detail="No education data for this ZIP")
+    return EducationSummary(
+        zip_code=z,
+        total_schools=int(e["total_schools"]) if e.get("total_schools") is not None else None,
+        avg_school_enrollment=float(e["avg_school_enrollment"]) if e.get("avg_school_enrollment") is not None else None,
+    )
+
+
+@router.get("/{zip_code}/income", response_model=IrsTotals)
+def zip_income(zip_code: str, db: Session = Depends(require_db)):
+    """Query 9 — IRS income totals for one ZIP."""
+    z = zip_code.strip()
+    if not z.isdigit() or len(z) != 5:
+        raise HTTPException(status_code=400, detail="zip_code must be a 5-digit string")
+    try:
+        ir = db.execute(text(sql.SQL_QUERY9), {"zip": z}).mappings().first()
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=f"Database query failed: {ex!s}") from ex
+    if not ir:
+        raise HTTPException(status_code=404, detail="No IRS data for this ZIP")
+    return IrsTotals(
+        zip_code=z,
+        total_income=float(ir["total_income"]) if ir.get("total_income") is not None else None,
+        total_wage_income=float(ir["total_wage_income"]) if ir.get("total_wage_income") is not None else None,
+        total_interest_income=float(ir["total_interest_income"]) if ir.get("total_interest_income") is not None else None,
+        total_dividend_income=float(ir["total_dividend_income"]) if ir.get("total_dividend_income") is not None else None,
+        total_capital_gain=float(ir["total_capital_gain"]) if ir.get("total_capital_gain") is not None else None,
+    )
+
+
+@router.get("/{zip_code}/income-bracket", response_model=list[IrsBracketRow])
+def zip_income_bracket(zip_code: str, db: Session = Depends(require_db)):
+    """Query 10 — IRS income by bracket for one ZIP."""
+    z = zip_code.strip()
+    if not z.isdigit() or len(z) != 5:
+        raise HTTPException(status_code=400, detail="zip_code must be a 5-digit string")
+    try:
+        rows = db.execute(text(sql.SQL_QUERY10), {"zip": z}).mappings().all()
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=f"Database query failed: {ex!s}") from ex
+    return [
+        IrsBracketRow(
+            zip_code=z,
+            income_bracket=str(r["income_bracket"]) if r.get("income_bracket") is not None else None,
+            num_returns=int(r["num_returns"]) if r.get("num_returns") is not None else None,
+            total_income=float(r["total_income"]) if r.get("total_income") is not None else None,
+            wage_income=float(r["wage_income"]) if r.get("wage_income") is not None else None,
+            interest_income=float(r["interest_income"]) if r.get("interest_income") is not None else None,
+            dividend_income=float(r["dividend_income"]) if r.get("dividend_income") is not None else None,
+            capital_gain=float(r["capital_gain"]) if r.get("capital_gain") is not None else None,
+        )
+        for r in rows
+    ]
+
+
 @router.get("/{zip_code}", response_model=ZipDetailResponse)
 def zip_detail(zip_code: str, db: Session = Depends(require_db)):
     """Milestone 3 queries 7–10 for one ZIP."""
@@ -182,12 +360,10 @@ def zip_detail(zip_code: str, db: Session = Depends(require_db)):
     if h:
         housing = HousingSummary(
             zip_code=z,
-            avg_housing_price=float(h["avg_housing_price"])
-            if h.get("avg_housing_price") is not None
-            else None,
-            avg_house_size=float(h["avg_house_size"]) if h.get("avg_house_size") is not None else None,
-            avg_bedrooms=float(h["avg_bedrooms"]) if h.get("avg_bedrooms") is not None else None,
-            avg_bathrooms=float(h["avg_bathrooms"]) if h.get("avg_bathrooms") is not None else None,
+            avg_housing_price=round(float(h["avg_housing_price"])) if h.get("avg_housing_price") is not None else None,
+            avg_house_size=round(float(h["avg_house_size"])) if h.get("avg_house_size") is not None else None,
+            avg_bedrooms=round(float(h["avg_bedrooms"])) if h.get("avg_bedrooms") is not None else None,
+            avg_bathrooms=round(float(h["avg_bathrooms"])) if h.get("avg_bathrooms") is not None else None,
         )
     education = None
     if e:
