@@ -42,8 +42,7 @@ export default function RecommendedSearchPage() {
       <header className="topbar">
         <h1>Recommended searches</h1>
         <p className="tagline">
-          Four preset Milestone 3 queries (Q1–Q4). Pick one to open its parameters — no flexible
-          sliders here.
+          Pick a preset query to explore ZIP-level insights — no flexible sliders here.
         </p>
         <SearchNav />
       </header>

@@ -18,8 +18,8 @@ const MODES = [
   },
   {
     value: "range_filters",
-    label: "Balanced Neighborhoods",
-    hint: "Mid-range price, income & school counts — your “well-balanced” preset (Query 3)",
+    label: "High Price, Low Enrollment",
+    hint: "ZIP codes where avg housing price is above national average but avg school enrollment is below national average (Query 3)",
   },
   {
     value: "beats_national",
@@ -90,9 +90,9 @@ export default function RecommendedSidebar({ filters, onChange }) {
                 {mode === "explore" &&
                   "Query 1: optional city and state narrow ZIPs before ranking by income ÷ price."}
                 {mode === "beats_state" &&
-                  "Query 2: compares each ZIP to its state’s averages. Choose state for meaningful results; city is optional."}
+                  "Query 2: compares each ZIP to its state's averages. Choose state for meaningful results; city is optional."}
                 {mode === "range_filters" &&
-                  "Query 3: set the mid-range bands below, then optional city/state."}
+                  "Query 3: ZIP codes where avg housing price exceeds the national average but avg school enrollment is below national average (min 3 schools)."}
                 {mode === "beats_national" &&
                   "Query 4: national $/sqft vs income benchmarks. Optional city and state."}
               </p>
@@ -128,85 +128,6 @@ export default function RecommendedSidebar({ filters, onChange }) {
               </div>
             </Panel>
 
-            {mode === "range_filters" && (
-              <Panel header="Balanced preset (Query 3 bands)" toggleable collapsed={false}>
-                <p className="mt-0 text-sm text-color-secondary">Numeric window for this preset.</p>
-                <div className="grid">
-                  <div className="col-6">
-                    <label className="field-label">Min price</label>
-                    <InputNumber
-                      value={numOrEmpty(filters.min_avg_price_q3)}
-                      onValueChange={(e) =>
-                        update("min_avg_price_q3", e.value == null ? "" : String(e.value))
-                      }
-                      className="w-full"
-                      min={0}
-                      useGrouping
-                    />
-                  </div>
-                  <div className="col-6">
-                    <label className="field-label">Max price</label>
-                    <InputNumber
-                      value={numOrEmpty(filters.max_avg_price_q3)}
-                      onValueChange={(e) =>
-                        update("max_avg_price_q3", e.value == null ? "" : String(e.value))
-                      }
-                      className="w-full"
-                      min={0}
-                      useGrouping
-                    />
-                  </div>
-                  <div className="col-6">
-                    <label className="field-label">Min income</label>
-                    <InputNumber
-                      value={numOrEmpty(filters.min_total_income_q3)}
-                      onValueChange={(e) =>
-                        update("min_total_income_q3", e.value == null ? "" : String(e.value))
-                      }
-                      className="w-full"
-                      min={0}
-                      useGrouping
-                    />
-                  </div>
-                  <div className="col-6">
-                    <label className="field-label">Max income</label>
-                    <InputNumber
-                      value={numOrEmpty(filters.max_total_income_q3)}
-                      onValueChange={(e) =>
-                        update("max_total_income_q3", e.value == null ? "" : String(e.value))
-                      }
-                      className="w-full"
-                      min={0}
-                      useGrouping
-                    />
-                  </div>
-                  <div className="col-6">
-                    <label className="field-label">Min schools</label>
-                    <InputNumber
-                      value={numOrEmpty(filters.min_schools_q3)}
-                      onValueChange={(e) =>
-                        update("min_schools_q3", e.value == null ? "" : String(e.value))
-                      }
-                      className="w-full"
-                      min={0}
-                      useGrouping={false}
-                    />
-                  </div>
-                  <div className="col-6">
-                    <label className="field-label">Max schools</label>
-                    <InputNumber
-                      value={numOrEmpty(filters.max_schools_q3)}
-                      onValueChange={(e) =>
-                        update("max_schools_q3", e.value == null ? "" : String(e.value))
-                      }
-                      className="w-full"
-                      min={0}
-                      useGrouping={false}
-                    />
-                  </div>
-                </div>
-              </Panel>
-            )}
           </>
         )}
       </div>

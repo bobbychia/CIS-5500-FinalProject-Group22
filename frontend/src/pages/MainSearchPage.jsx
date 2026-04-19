@@ -48,8 +48,7 @@ export default function MainSearchPage() {
       <header className="topbar">
         <h1>Neighborhood & ZIP search</h1>
         <p className="tagline">
-          Flexible filters over ZIP-level summaries — income, price, schools, and bedrooms (Milestone 3
-          Query 1). CIS 5500
+          Flexible filters over ZIP-level summaries — income, price, schools, and bedrooms.
         </p>
         <SearchNav />
       </header>
