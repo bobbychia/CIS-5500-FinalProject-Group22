@@ -1,30 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button } from "primereact/button";
 import { Dropdown } from "primereact/dropdown";
 import { InputNumber } from "primereact/inputnumber";
-import { Panel } from "primereact/panel";
 import CitySearch from "./CitySearch.jsx";
 
 const MODES = [
   {
     value: "explore",
     label: "Best Value Areas",
-    hint: "Top ZIPs by income ÷ price — schools & prices in one view (Query 1)",
+    hint: "Top ZIPs by income ÷ price — schools & prices in one view",
   },
   {
     value: "beats_state",
     label: "Strong Neighborhoods",
-    hint: "Lower than state avg home price, higher income, 3+ schools (Query 2)",
+    hint: "Lower than state avg home price, higher income, 3+ schools",
   },
   {
     value: "range_filters",
-    label: "High Price, Low Enrollment",
-    hint: "ZIP codes where avg housing price is above national average but avg school enrollment is below national average (Query 3)",
+    label: "Balanced Neighborhoods",
+    hint: "Mid-range price, income & school counts",
   },
   {
     value: "beats_national",
     label: "High Income, Better Value",
-    hint: "Below national avg $/sqft but above national income — smart value (Query 4)",
+    hint: "Below national avg $/sqft but above national income",
   },
 ];
 
@@ -59,76 +57,91 @@ export default function RecommendedSidebar({ filters, onChange }) {
 
   return (
     <aside className="sidebar-wrap">
-      <div className="flex flex-column gap-3">
-        <h2 className="m-0 text-xl">Recommended searches</h2>
-
-        <Panel header="Choose a query" toggleable collapsed={false}>
-          <p className="mt-0 text-sm text-color-secondary">
-            Tap a preset — its parameter panel appears below. No flexible sliders on this page.
-          </p>
-          <div className="flex flex-column gap-2">
-            {MODES.map((m) => (
-              <Button
-                key={m.value}
-                type="button"
-                label={m.label}
-                className="text-left white-space-normal h-auto py-2 justify-content-start"
-                icon={mode === m.value ? "pi pi-check" : "pi pi-angle-right"}
-                severity={mode === m.value ? undefined : "secondary"}
-                outlined={mode !== m.value}
-                onClick={() => update("search_mode", m.value)}
-                title={m.hint}
-              />
-            ))}
+      <div className="filter-panel">
+        <div className="panel-header-row">
+          <div>
+            <h2 className="panel-title">Curated Presets</h2>
+            <p className="panel-subtitle">把推荐查询包装成更像顶级产品里的探索入口。</p>
           </div>
-        </Panel>
+        </div>
+
+        <div className="flex flex-column gap-3 mb-5">
+          {MODES.map((m) => {
+            const isSelected = mode === m.value;
+            return (
+              <div
+                key={m.value}
+                className={`filter-preset ${isSelected ? "is-active" : ""}`}
+                onClick={() => update("search_mode", m.value)}
+              >
+                <div className="flex align-items-center gap-2 mb-1">
+                  <i className={`pi ${isSelected ? "pi-check-circle" : "pi-circle"}`}></i>
+                  <span className="font-bold">{m.label}</span>
+                </div>
+                <div className="text-sm pl-4">{m.hint}</div>
+              </div>
+            );
+          })}
+        </div>
 
         {showParams && (
-          <>
-            <Panel header="Parameters" toggleable collapsed={false}>
-              <p className="mt-0 text-sm text-color-secondary">
-                {mode === "explore" &&
-                  "Query 1: optional city and state narrow ZIPs before ranking by income ÷ price."}
-                {mode === "beats_state" &&
-                  "Query 2: compares each ZIP to its state's averages. Choose state for meaningful results; city is optional."}
-                {mode === "range_filters" &&
-                  "Query 3: ZIP codes where avg housing price exceeds the national average but avg school enrollment is below national average (min 3 schools)."}
-                {mode === "beats_national" &&
-                  "Query 4: national $/sqft vs income benchmarks. Optional city and state."}
-              </p>
-
-              <h3 className="text-sm font-semibold mb-2">Where</h3>
-              <div className="flex flex-column gap-3">
-                <CitySearch
-                  value={filters.city}
-                  state={filters.state}
-                  onChange={(v) => update("city", v)}
-                  onPick={(city) => update("city", city)}
+          <div className="filter-section pt-0 border-top-1 surface-border mt-4 pt-4">
+            <h3 className="filter-title">Location Refinement</h3>
+            <div className="flex flex-column gap-3">
+              <CitySearch
+                value={filters.city}
+                state={filters.state}
+                onChange={(v) => update("city", v)}
+                onPick={(city) => update("city", city)}
+              />
+              <div>
+                <label className="block text-sm font-semibold text-700 mb-2">State</label>
+                <Dropdown
+                  value={filters.state}
+                  options={stateOptions}
+                  onChange={(e) => update("state", e.value)}
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="Any State"
+                  className="w-full"
+                  filter={states.length > 10}
+                  showClear
                 />
-                <div>
-                  <label htmlFor="rec-state-dd" className="field-label">
-                    State
-                  </label>
-                  <Dropdown
-                    inputId="rec-state-dd"
-                    value={filters.state}
-                    options={stateOptions}
-                    onChange={(e) => update("state", e.value)}
-                    optionLabel="label"
-                    optionValue="value"
-                    placeholder="Any"
-                    className="w-full"
-                    filter={states.length > 10}
-                    showClear
-                  />
-                </div>
-                <p className="m-0 text-sm text-color-secondary">
-                  City matches as a substring; state is exact.
-                </p>
               </div>
-            </Panel>
+            </div>
+          </div>
+        )}
 
-          </>
+        {mode === "range_filters" && (
+          <div className="filter-section">
+            <h3 className="filter-title">Balanced Preset Bounds</h3>
+            <div className="grid">
+              <div className="col-6 mb-2">
+                <label className="block text-xs text-500 font-bold mb-1">Min Price</label>
+                <InputNumber value={numOrEmpty(filters.min_avg_price_q3)} onValueChange={(e) => update("min_avg_price_q3", e.value == null ? "" : String(e.value))} className="w-full" inputClassName="w-full" min={0} useGrouping prefix="$" />
+              </div>
+              <div className="col-6 mb-2">
+                <label className="block text-xs text-500 font-bold mb-1">Max Price</label>
+                <InputNumber value={numOrEmpty(filters.max_avg_price_q3)} onValueChange={(e) => update("max_avg_price_q3", e.value == null ? "" : String(e.value))} className="w-full" inputClassName="w-full" min={0} useGrouping prefix="$" />
+              </div>
+              <div className="col-6 mb-2">
+                <label className="block text-xs text-500 font-bold mb-1">Min Income</label>
+                <InputNumber value={numOrEmpty(filters.min_total_income_q3)} onValueChange={(e) => update("min_total_income_q3", e.value == null ? "" : String(e.value))} className="w-full" inputClassName="w-full" min={0} useGrouping prefix="$" />
+              </div>
+              <div className="col-6 mb-2">
+                <label className="block text-xs text-500 font-bold mb-1">Max Income</label>
+                <InputNumber value={numOrEmpty(filters.max_total_income_q3)} onValueChange={(e) => update("max_total_income_q3", e.value == null ? "" : String(e.value))} className="w-full" inputClassName="w-full" min={0} useGrouping prefix="$" />
+              </div>
+              <div className="col-6 mb-2">
+                <label className="block text-xs text-500 font-bold mb-1">Min Schools</label>
+                <InputNumber value={numOrEmpty(filters.min_schools_q3)} onValueChange={(e) => update("min_schools_q3", e.value == null ? "" : String(e.value))} className="w-full" inputClassName="w-full" min={0} useGrouping={false} />
+              </div>
+              <div className="col-6 mb-2">
+                <label className="block text-xs text-500 font-bold mb-1">Max Schools</label>
+                <InputNumber value={numOrEmpty(filters.max_schools_q3)} onValueChange={(e) => update("max_schools_q3", e.value == null ? "" : String(e.value))} className="w-full" inputClassName="w-full" min={0} useGrouping={false} />
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </aside>

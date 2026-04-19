@@ -7,10 +7,7 @@ import { useDebouncedValue } from "../hooks/useDebouncedValue.js";
 import { useZipAreasSearch } from "../hooks/useZipAreasSearch.js";
 import "../App.css";
 
-/** Wait after last keystroke before hitting /api/zip-areas (heavy Query 1). */
 const SEARCH_DEBOUNCE_MS = 500;
-
-const PAGE_SIZE = 30;
 
 export default function MainSearchPage() {
   const [filters, setFilters] = useState({
@@ -25,51 +22,44 @@ export default function MainSearchPage() {
     max_schools: "",
     bed_rounds: "",
   });
-  const [page, setPage] = useState(0);
-
-  const handleFiltersChange = (newFilters) => {
-    setFilters(newFilters);
-    setPage(0);
-  };
 
   const debouncedFilters = useDebouncedValue(filters, SEARCH_DEBOUNCE_MS);
-  const query = useMemo(
-    () => buildZipSearchQuery({ ...debouncedFilters, offset: page * PAGE_SIZE }),
-    [debouncedFilters, page]
-  );
+  const query = useMemo(() => buildZipSearchQuery(debouncedFilters), [debouncedFilters]);
   const { data, loading, error } = useZipAreasSearch(query);
 
-  const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 0;
   const waitingForDebounce =
     JSON.stringify(filters) !== JSON.stringify(debouncedFilters);
 
   return (
     <div className="page layout">
-      <header className="topbar">
-        <h1>Neighborhood & ZIP search</h1>
-        <p className="tagline">
-          Flexible filters over ZIP-level summaries — income, price, schools, and bedrooms.
-        </p>
-        <SearchNav />
-      </header>
       <div className="shell">
-        <FilterSidebar filters={filters} onChange={handleFiltersChange} />
-        <div className="results-column">
+        <FilterSidebar filters={filters} onChange={setFilters} />
+        <div className="results-column results-panel">
+          <div className="results-toolbar">
+            <SearchNav />
+          </div>
           {waitingForDebounce && (
-            <p className="hint debounce-hint" role="status">
-              Search runs shortly after you stop typing — this avoids overloading the server.
-            </p>
-          )}
-          <ZipAreaList loading={loading} error={error} response={data} />
-          {totalPages > 1 && (
-            <div className="flex justify-content-center align-items-center gap-3 mt-3">
-              <button onClick={() => setPage(0)} disabled={page === 0}>«</button>
-              <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>‹</button>
-              <span>Page {page + 1} of {totalPages}</span>
-              <button onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}>›</button>
-              <button onClick={() => setPage(totalPages - 1)} disabled={page >= totalPages - 1}>»</button>
+            <div className="preview-banner mb-4">
+              <div className="preview-banner__icon">
+                <i className="pi pi-spin pi-spinner" />
+              </div>
+              <div>
+                <p className="m-0 preview-banner__title">正在更新结果</p>
+                <p className="m-0 preview-banner__text">输入停止后会自动刷新，避免频繁请求。</p>
+              </div>
             </div>
           )}
+          <div className="results-header">
+            <div>
+              <h2 className="results-title">Neighborhood results</h2>
+              <p className="results-subtitle">左侧筛选，右侧直接看结果，页面结构更干净。</p>
+            </div>
+            <span className="results-mode-badge">
+              <i className="pi pi-bolt"></i>
+              Live query
+            </span>
+          </div>
+          <ZipAreaList loading={loading} error={error} response={data} />
         </div>
       </div>
     </div>

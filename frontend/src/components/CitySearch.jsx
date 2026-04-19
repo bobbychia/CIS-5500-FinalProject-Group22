@@ -58,7 +58,7 @@ export default function CitySearch({ value, state, onChange, onPick }) {
 
   return (
     <div className="city-field">
-      <label htmlFor="city-ac" className="field-label">
+      <label htmlFor="city-ac" className="block text-sm font-semibold text-700 mb-2">
         City
       </label>
       <div className="city-field-row">

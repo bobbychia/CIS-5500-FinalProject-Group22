@@ -7,8 +7,8 @@ export default function SearchNav() {
   const activeIndex = location.pathname.startsWith("/recommended") ? 1 : 0;
 
   const items = [
-    { label: "Flexible search", icon: "pi pi-sliders-h" },
-    { label: "Recommended searches", icon: "pi pi-star" },
+    { label: "Buy", icon: "pi pi-search" },
+    { label: "Curated", icon: "pi pi-star" },
   ];
 
   return (
