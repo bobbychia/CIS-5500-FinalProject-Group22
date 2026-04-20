@@ -131,15 +131,11 @@ export function getStates(opts) {
 
 /** GET /api/meta/cities */
 export function getCities({ q = "", state, restrictState = false, limit = 20 } = {}, opts) {
-  return requestJson(
-    buildUrl("/api/meta/cities", {
-      q,
-      state: state ?? null,
-      restrict_state: restrictState ? "true" : "false",
-      limit,
-    }),
-    opts
-  );
+  const params = { q: q ?? "", limit };
+  const st = state != null ? String(state).trim() : "";
+  if (st) params.state = st;
+  if (restrictState) params.restrict_state = "true";
+  return requestJson(buildUrl("/api/meta/cities", params), opts);
 }
 
 /** GET /api/meta/price-histogram */

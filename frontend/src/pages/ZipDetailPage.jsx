@@ -81,7 +81,6 @@ export default function ZipDetailPage() {
     score?.star_rating != null
       ? `${"★".repeat(score.star_rating)}${"☆".repeat(Math.max(0, 5 - score.star_rating))}`
       : null;
-
   const bracketRows =
     content?.irs_by_bracket?.map((row, index) => ({
       id: index,

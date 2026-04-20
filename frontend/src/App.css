@@ -86,7 +86,12 @@ button {
   background:
     radial-gradient(circle at top right, rgba(212, 87, 58, 0.08), transparent 28%),
     linear-gradient(180deg, #fdfcf8 0%, var(--bg) 22%, var(--bg) 100%);
-  padding-bottom: 8rem;
+  padding-bottom: 0;
+}
+
+/* Find / Quick / Rank: bottom breathing room matches hero intro top (2.25rem) */
+.page.layout.page--browse {
+  padding-bottom: 2.25rem;
 }
 
 .wrap {
@@ -411,16 +416,25 @@ button {
    ========================================================================== */
 
 .landing-page {
-  padding-top: 1rem;
+  padding-top: 0;
+}
+
+.page.layout.page--landing {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.page.layout.page--landing .landing-page {
+  height: calc(100vh - 74px);
 }
 
 .landing-hero {
-  min-height: calc(100vh - 90px);
+  min-height: calc(100vh - 130px);
   display: grid;
   grid-template-columns: minmax(0, 0.9fr) minmax(420px, 0.95fr);
   gap: 2rem;
   align-items: center;
-  padding: 3.5rem 0 2rem;
+  padding: 0 0 1rem;
 }
 
 .landing-hero__copy {
@@ -590,13 +604,22 @@ button {
    ========================================================================== */
 
 .find-page {
-  padding-top: 1rem;
+  padding-top: 0;
 }
 
 .find-page__intro {
   display: grid;
   gap: 0.65rem;
-  padding: 3.5rem 0 1.5rem;
+  padding: 2.25rem 0 1.125rem;
+}
+
+.find-page__intro .display,
+.curated-intro .display,
+.rankings-hero__title {
+  max-width: none;
+  font-size: clamp(2.5rem, 4.6vw, 4.75rem);
+  line-height: 1.02;
+  white-space: nowrap;
 }
 
 .find-page__status {
@@ -613,28 +636,53 @@ button {
 }
 
 .find-shell {
-  align-items: stretch;
-  height: calc(100vh - 190px);
-  min-height: 720px;
-  overflow: hidden;
+  align-items: start;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
 }
 
 .find-shell__filters,
 .find-shell__results {
   min-height: 0;
-  height: 100%;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
+  height: auto;
+  overflow: visible;
 }
 
 .find-shell__filters {
   padding-right: 0.5rem;
-  padding-bottom: 5rem;
 }
 
 .find-shell__results {
   padding-right: 0.4rem;
+}
+
+.find-show-more-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  padding-bottom: 1rem;
+}
+
+.find-show-more {
+  border: 1px solid var(--ink);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  padding: 0.65rem 2.25rem;
+  border-radius: var(--r-pill);
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition:
+    transform var(--dur-base) var(--ease-spring),
+    background var(--dur-fast) var(--ease-out);
+}
+
+.find-show-more:hover {
+  background: var(--ink);
+  color: var(--bg);
+  transform: translateY(-1px);
 }
 
 .find-shell .sidebar-wrap {
@@ -1056,11 +1104,11 @@ button {
    ========================================================================== */
 
 .curated-intro {
-  padding: 4.5rem 0 2.25rem;
+  padding: 2.25rem 0 1.125rem;
 }
 
 .curated-intro .display {
-  max-width: 10ch;
+  max-width: none;
 }
 
 /* ==========================================================================
@@ -1068,17 +1116,17 @@ button {
    ========================================================================== */
 
 .rankings-page {
-  padding-top: 1rem;
+  padding-top: 0;
 }
 
 .rankings-hero {
   display: grid;
   gap: 2rem;
-  padding: 3.5rem 0 2.25rem;
+  padding: 2.25rem 0 1.125rem;
 }
 
 .rankings-hero__title {
-  max-width: 11ch;
+  max-width: none;
 }
 
 .rankings-toolbar {
@@ -1904,6 +1952,12 @@ button {
 
   .landing-wall__column.is-offset {
     --wall-offset: 80px;
+  }
+
+  .find-page__intro .display,
+  .curated-intro .display,
+  .rankings-hero__title {
+    white-space: normal;
   }
 
   .hero-search-grid,

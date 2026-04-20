@@ -3,15 +3,7 @@ import { Link } from "react-router-dom";
 import { cityFeatureImage } from "../lib/api.js";
 
 /**
- * A search-result card for one ZIP.
- *
- * Only reads fields actually returned by the backend's ZipAreaCard schema
- * (see backend/app/schemas/zip_area.py):
- *   id, zip_code, city, state, avg_housing_price, total_income, num_schools,
- *   avg_school_enrollment, income_price_ratio, avg_price_per_sqft, thumb_url
- *
- * `score` is optional and, when present, is attached by the parent list after
- * fetching /api/zip-areas/scores. It has the shape { final_score, star_rating }.
+ * `score` from GET /api/zip-areas/scores: { final_score, star_rating }.
  */
 export default function ZipAreaCard({ area: z, score }) {
   const pricePerSqft =

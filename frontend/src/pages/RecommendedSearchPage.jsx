@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import RecommendedSidebar from "../components/RecommendedSidebar.jsx";
 import ZipAreaList from "../components/ZipAreaList.jsx";
 import SearchNav from "../components/SearchNav.jsx";
@@ -25,41 +25,62 @@ export default function RecommendedSearchPage() {
   const debouncedFilters = useDebouncedValue(filters, SEARCH_DEBOUNCE_MS);
   const query = useMemo(() => buildRecommendedZipQuery(debouncedFilters), [debouncedFilters]);
   const { data, loading, error } = useZipAreasSearch(query);
+  const resultsAnchorRef = useRef(null);
+
+  const waitingForDebounce =
+    JSON.stringify(filters) !== JSON.stringify(debouncedFilters);
+
+  useEffect(() => {
+    resultsAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [debouncedFilters]);
 
   return (
-    <div className="page layout">
+    <div className="page layout page--browse">
       <SearchNav />
-      <section className="curated-intro">
-        <div className="wrap">
-          <p className="eyebrow eyebrow--accent">Quick</p>
-          <h1 className="display display--lg">Preset shortcuts for faster home discovery.</h1>
-        </div>
-      </section>
-
-      <div className="shell shell--editorial">
-        <RecommendedSidebar filters={filters} onChange={setFilters} />
-        <div className="results-column results-panel">
-          <div className="results-header">
-            <div>
-              <h2 className="results-title">Quick neighborhood picks</h2>
-            </div>
-            <span className="results-mode-badge">
-              <i className="pi pi-sparkles"></i>
-              Smart preset
-            </span>
+      <main className="find-page">
+        <section className="curated-intro">
+          <div className="wrap">
+            <p className="eyebrow eyebrow--accent">Quick</p>
+            <h1 className="display display--lg">Preset shortcuts for faster discovery</h1>
           </div>
-          <ZipAreaList
-            loading={loading}
-            error={error}
-            response={data}
-            idleMessage={
-              filters.search_mode == null || filters.search_mode === ""
-                ? "Select a quick preset on the left to view matching neighborhoods."
-                : null
-            }
-          />
+        </section>
+
+        <div ref={resultsAnchorRef} className="shell find-shell">
+          <div className="find-shell__filters">
+            <RecommendedSidebar filters={filters} onChange={setFilters} />
+          </div>
+          <div className="results-column find-shell__results results-panel">
+            {waitingForDebounce ? (
+              <div className="find-page__status">
+                <i className="pi pi-spin pi-spinner" />
+                Updating your matches...
+              </div>
+            ) : null}
+
+            <div className="results-header">
+              <div>
+                <h2 className="results-title">Quick neighborhood picks</h2>
+              </div>
+              <span className="results-mode-badge">
+                <i className="pi pi-sparkles"></i>
+                Smart preset
+              </span>
+            </div>
+            <ZipAreaList
+              loading={loading}
+              error={error}
+              response={data}
+              hideHeader
+              idleMessage={
+                filters.search_mode == null || filters.search_mode === ""
+                  ? "Select a quick preset on the left to view matching neighborhoods."
+                  : null
+              }
+              showMoreStep={9}
+            />
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

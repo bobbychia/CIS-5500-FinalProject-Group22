@@ -28,29 +28,29 @@ export default function MainSearchPage() {
   const debouncedFilters = useDebouncedValue(filters, SEARCH_DEBOUNCE_MS);
   const query = useMemo(() => buildZipSearchQuery(debouncedFilters), [debouncedFilters]);
   const { data, loading, error } = useZipAreasSearch(query);
-  const resultsPaneRef = useRef(null);
+  const resultsAnchorRef = useRef(null);
 
   const waitingForDebounce =
     JSON.stringify(filters) !== JSON.stringify(debouncedFilters);
 
   useEffect(() => {
-    resultsPaneRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    resultsAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [debouncedFilters]);
 
   return (
-    <div className="page layout">
+    <div className="page layout page--browse">
       <SearchNav />
       <main className="find-page">
         <section className="find-page__intro wrap">
           <p className="eyebrow eyebrow--accent">Find</p>
-          <h1 className="display display--lg">Refine the neighborhoods that actually fit your life.</h1>
+          <h1 className="display display--lg">Refine neighborhoods that fit your life</h1>
         </section>
 
-        <div className="shell find-shell">
+        <div ref={resultsAnchorRef} className="shell find-shell">
           <div className="find-shell__filters">
             <FilterSidebar filters={filters} onChange={setFilters} />
           </div>
-          <div ref={resultsPaneRef} className="results-column find-shell__results">
+          <div className="results-column find-shell__results">
             {waitingForDebounce ? (
               <div className="find-page__status">
                 <i className="pi pi-spin pi-spinner" />
@@ -64,6 +64,7 @@ export default function MainSearchPage() {
               response={data}
               heading="Homes and neighborhoods"
               subheading="ZIP code, city, state, pricing, education density, and local income at a glance."
+              showMoreStep={9}
             />
           </div>
         </div>

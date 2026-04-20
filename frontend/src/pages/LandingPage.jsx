@@ -74,7 +74,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="page layout">
+    <div className="page layout page--landing">
       <SearchNav />
 
       <main className="landing-page">

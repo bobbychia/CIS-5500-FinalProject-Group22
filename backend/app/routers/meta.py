@@ -139,14 +139,18 @@ def city_suggest(
           AND (:state IS NULL OR UPPER(TRIM(state)) = :state)
           AND (
             :q = ''
+            OR LOWER(TRIM(city)) LIKE LOWER(:q) || '%'
+            OR LOWER(TRIM(city)) LIKE '% ' || LOWER(:q) || '%'
             OR LOWER(TRIM(city)) LIKE '%' || LOWER(:q) || '%'
           )
         ORDER BY
           CASE
             WHEN :q = '' THEN 0
             WHEN LOWER(TRIM(city)) LIKE LOWER(:q) || '%' THEN 0
-            ELSE 1
+            WHEN LOWER(TRIM(city)) LIKE '% ' || LOWER(:q) || '%' THEN 1
+            ELSE 2
           END,
+          LENGTH(TRIM(city)) ASC,
           city ASC
         LIMIT :limit
         """

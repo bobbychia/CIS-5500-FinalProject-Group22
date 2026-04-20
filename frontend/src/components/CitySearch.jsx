@@ -7,12 +7,13 @@ import { getCities } from "../lib/api.js";
  * City typeahead — calls GET /api/meta/cities via `getCities` in lib/api.js.
  *
  * Matches backend behaviour (backend/app/routers/meta.py::city_suggest):
- *  - `q` is an optional case-insensitive substring
+ *  - `q` is an optional case-insensitive match (prefix / word-start / substring)
  *  - if state is provided AND restrict_state=true, results are scoped to state
  *  - restrict_state=false lets suggestions span all states (Expedia-style)
  */
 export default function CitySearch({ value, state, onChange, onPick, label = "City", hideLabel = false }) {
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
   const abortRef = useRef(null);
 
   const runFetch = useCallback(
@@ -20,22 +21,33 @@ export default function CitySearch({ value, state, onChange, onPick, label = "Ci
       abortRef.current?.abort();
       const ac = new AbortController();
       abortRef.current = ac;
+      const trimmed = (q || "").trim();
+      const restrict = Boolean(state?.trim());
+
+      setLoading(true);
+      setItems([]);
 
       getCities(
         {
-          q: (q || "").trim(),
+          q: trimmed,
           state: state?.trim() || null,
-          restrictState: Boolean(state?.trim()),
-          limit: 20,
+          restrictState: restrict,
+          limit: 25,
         },
         { signal: ac.signal }
       )
         .then((d) => {
-          if (!ac.signal.aborted) setItems(d.items || []);
+          if (!ac.signal.aborted) {
+            const list = Array.isArray(d?.items) ? d.items : [];
+            setItems(list);
+          }
         })
         .catch((err) => {
           if (err.name === "AbortError") return;
-          setItems([]);
+          if (!ac.signal.aborted) setItems([]);
+        })
+        .finally(() => {
+          if (!ac.signal.aborted) setLoading(false);
         });
     },
     [state]
@@ -48,11 +60,14 @@ export default function CitySearch({ value, state, onChange, onPick, label = "Ci
   useEffect(() => {
     if (!value?.trim()) return;
     runFetch(value);
-  }, [state]);
+  }, [state, runFetch]);
 
   const completeMethod = (e) => {
-    runFetch(e.query);
+    const query = typeof e?.query === "string" ? e.query : "";
+    runFetch(query);
   };
+
+  const showEmpty = !loading && items.length === 0;
 
   return (
     <div className="city-field">
@@ -72,10 +87,10 @@ export default function CitySearch({ value, state, onChange, onPick, label = "Ci
           placeholder="e.g. Philadelphia"
           className="flex-1 w-full"
           inputClassName="w-full"
-          delay={280}
-          minLength={0}
-          showEmptyMessage
-          emptyMessage="No suggestions — main search still matches by substring; try spelling or state."
+          delay={200}
+          minLength={1}
+          showEmptyMessage={showEmpty}
+          emptyMessage="No matching cities."
         />
         {value ? (
           <Button

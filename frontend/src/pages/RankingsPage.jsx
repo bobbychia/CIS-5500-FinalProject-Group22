@@ -89,16 +89,16 @@ export default function RankingsPage() {
 
   const issueTitle =
     mode === "income"
-      ? "The 2026 Top 50 Most Valued ZIPs"
-      : "The 2026 Most Attainable ZIPs";
+      ? "2026 Top 50 Valuable ZIPs"
+      : "2026 Most Affordable ZIPs";
   return (
-    <div className="page layout">
+    <div className="page layout page--browse">
       <SearchNav />
 
       <main className="rankings-page">
         <section className="rankings-hero wrap wrap--wide fade-in">
           <div className="rankings-hero__copy">
-            <p className="eyebrow eyebrow--accent">Ranking issue</p>
+            <p className="eyebrow eyebrow--accent">Rank</p>
             <h1 className="display display--lg rankings-hero__title">{issueTitle}</h1>
           </div>
 
