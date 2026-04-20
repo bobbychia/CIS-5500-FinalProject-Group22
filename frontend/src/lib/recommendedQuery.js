@@ -6,9 +6,8 @@ export function buildRecommendedZipQuery(filters) {
   }
   const q = new URLSearchParams();
   q.set("search_mode", filters.search_mode);
-  if (filters.city?.trim()) q.set("city", filters.city.trim());
-  if (filters.state?.trim()) q.set("state", filters.state.trim());
-  if (filters.offset) q.set("offset", filters.offset);
+  if (filters.city.trim()) q.set("city", filters.city.trim());
+  if (filters.state.trim()) q.set("state", filters.state.trim());
 
   if (filters.search_mode === "range_filters") {
     q.set("min_avg_price_q3", filters.min_avg_price_q3);

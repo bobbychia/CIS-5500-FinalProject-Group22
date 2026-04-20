@@ -9,9 +9,8 @@ function appendOptionalNum(q, key, raw) {
 export function buildZipSearchQuery(filters) {
   const q = new URLSearchParams();
   q.set("search_mode", filters.search_mode);
-  if (filters.city?.trim()) q.set("city", filters.city.trim());
-  if (filters.state?.trim()) q.set("state", filters.state.trim());
-  if (filters.offset) q.set("offset", filters.offset);
+  if (filters.city.trim()) q.set("city", filters.city.trim());
+  if (filters.state.trim()) q.set("state", filters.state.trim());
 
   if (filters.search_mode === "range_filters") {
     q.set("min_avg_price_q3", filters.min_avg_price_q3);
@@ -28,6 +27,8 @@ export function buildZipSearchQuery(filters) {
   appendOptionalNum(q, "max_total_income", filters.max_total_income);
   appendOptionalNum(q, "min_schools", filters.min_schools);
   appendOptionalNum(q, "max_schools", filters.max_schools);
+  appendOptionalNum(q, "min_avg_bedrooms", filters.min_avg_bedrooms);
+  appendOptionalNum(q, "max_avg_bedrooms", filters.max_avg_bedrooms);
   if (filters.bed_rounds?.trim()) q.set("bed_rounds", filters.bed_rounds.trim());
 
   return q.toString();
