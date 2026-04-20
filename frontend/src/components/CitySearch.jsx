@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AutoComplete } from "primereact/autocomplete";
 import { Button } from "primereact/button";
-
-const API_BASE = "";
+import { getCities } from "../lib/api.js";
 
 /**
- * City typeahead via GET /api/meta/cities — PrimeReact AutoComplete + abort stale requests.
+ * City typeahead — calls GET /api/meta/cities via `getCities` in lib/api.js.
+ *
+ * Matches backend behaviour (backend/app/routers/meta.py::city_suggest):
+ *  - `q` is an optional case-insensitive substring
+ *  - if state is provided AND restrict_state=true, results are scoped to state
+ *  - restrict_state=false lets suggestions span all states (Expedia-style)
  */
-export default function CitySearch({ value, state, onChange, onPick }) {
+export default function CitySearch({ value, state, onChange, onPick, label = "City", hideLabel = false }) {
   const [items, setItems] = useState([]);
   const abortRef = useRef(null);
 
@@ -17,21 +21,15 @@ export default function CitySearch({ value, state, onChange, onPick }) {
       const ac = new AbortController();
       abortRef.current = ac;
 
-      const sp = new URLSearchParams();
-      const qt = (q || "").trim();
-      if (qt) sp.set("q", qt);
-      if (state?.trim()) {
-        sp.set("state", state.trim());
-        sp.set("restrict_state", "true");
-      } else {
-        sp.set("restrict_state", "false");
-      }
-      sp.set("limit", "20");
-      fetch(`${API_BASE}/api/meta/cities?${sp.toString()}`, { signal: ac.signal })
-        .then(async (r) => {
-          if (!r.ok) throw new Error(await r.text());
-          return r.json();
-        })
+      getCities(
+        {
+          q: (q || "").trim(),
+          state: state?.trim() || null,
+          restrictState: Boolean(state?.trim()),
+          limit: 20,
+        },
+        { signal: ac.signal }
+      )
         .then((d) => {
           if (!ac.signal.aborted) setItems(d.items || []);
         })
@@ -58,9 +56,11 @@ export default function CitySearch({ value, state, onChange, onPick }) {
 
   return (
     <div className="city-field">
-      <label htmlFor="city-ac" className="block text-sm font-semibold text-700 mb-2">
-        City
-      </label>
+      {!hideLabel ? (
+        <label htmlFor="city-ac" className="block text-sm font-semibold text-700 mb-2">
+          {label}
+        </label>
+      ) : null}
       <div className="city-field-row">
         <AutoComplete
           inputId="city-ac"

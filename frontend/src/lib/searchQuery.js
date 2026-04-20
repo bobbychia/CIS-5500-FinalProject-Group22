@@ -27,6 +27,8 @@ export function buildZipSearchQuery(filters) {
   appendOptionalNum(q, "max_total_income", filters.max_total_income);
   appendOptionalNum(q, "min_schools", filters.min_schools);
   appendOptionalNum(q, "max_schools", filters.max_schools);
+  appendOptionalNum(q, "min_avg_bedrooms", filters.min_avg_bedrooms);
+  appendOptionalNum(q, "max_avg_bedrooms", filters.max_avg_bedrooms);
   if (filters.bed_rounds?.trim()) q.set("bed_rounds", filters.bed_rounds.trim());
 
   return q.toString();

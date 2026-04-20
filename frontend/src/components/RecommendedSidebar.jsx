@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Dropdown } from "primereact/dropdown";
 import { InputNumber } from "primereact/inputnumber";
 import CitySearch from "./CitySearch.jsx";
+import { getStates } from "../lib/api.js";
 
 const MODES = [
   {
@@ -26,8 +27,6 @@ const MODES = [
   },
 ];
 
-const API_BASE = "";
-
 function numOrEmpty(v) {
   if (v === "" || v == null || Number.isNaN(Number(v))) return null;
   return Number(v);
@@ -46,10 +45,17 @@ export default function RecommendedSidebar({ filters, onChange }) {
   }
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/meta/states`)
-      .then((r) => r.json())
-      .then((d) => setStates(d.items || []))
-      .catch(() => setStates([]));
+    let cancelled = false;
+    getStates()
+      .then((d) => {
+        if (!cancelled) setStates(d.items || []);
+      })
+      .catch(() => {
+        if (!cancelled) setStates([]);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const mode = filters.search_mode;
@@ -60,8 +66,7 @@ export default function RecommendedSidebar({ filters, onChange }) {
       <div className="filter-panel">
         <div className="panel-header-row">
           <div>
-            <h2 className="panel-title">Curated Presets</h2>
-            <p className="panel-subtitle">把推荐查询包装成更像顶级产品里的探索入口。</p>
+            <h2 className="panel-title">Quick Presets</h2>
           </div>
         </div>
 
@@ -99,7 +104,7 @@ export default function RecommendedSidebar({ filters, onChange }) {
                 <Dropdown
                   value={filters.state}
                   options={stateOptions}
-                  onChange={(e) => update("state", e.value)}
+                  onChange={(e) => update("state", e.value ?? "")}
                   optionLabel="label"
                   optionValue="value"
                   placeholder="Any State"

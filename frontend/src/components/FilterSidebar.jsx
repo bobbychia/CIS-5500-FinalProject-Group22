@@ -4,6 +4,7 @@ import { Dropdown } from "primereact/dropdown";
 import { InputNumber } from "primereact/inputnumber";
 import { Slider } from "primereact/slider";
 import CitySearch from "./CitySearch.jsx";
+import { getPriceHistogram, getStates } from "../lib/api.js";
 
 const BED_ROUND_OPTIONS = [
   { k: "1", label: "1+ Beds" },
@@ -13,8 +14,8 @@ const BED_ROUND_OPTIONS = [
   { k: "5", label: "5+ Beds" },
 ];
 
-const API_BASE = "";
 const SCH_FLEX_MAX = 40;
+const BEDROOM_DOMAIN = [1, 6];
 
 function numOrEmpty(v) {
   if (v === "" || v == null || Number.isNaN(Number(v))) return null;
@@ -42,29 +43,40 @@ export default function FilterSidebar({ filters, onChange }) {
   function clearOptionalRefine() {
     onChange({
       ...filters,
+      city: "",
+      state: "",
+      search_mode: "explore",
       min_avg_price: "",
       max_avg_price: "",
       min_total_income: "",
       max_total_income: "",
       min_schools: "",
       max_schools: "",
+      min_avg_bedrooms: "",
+      max_avg_bedrooms: "",
       bed_rounds: "",
     });
   }
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/meta/states`)
-      .then((r) => r.json())
-      .then((d) => setStates(d.items || []))
-      .catch(() => setStates([]));
+    let cancelled = false;
+    getStates()
+      .then((d) => {
+        if (!cancelled) setStates(d.items || []);
+      })
+      .catch(() => {
+        if (!cancelled) setStates([]);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    const sp = new URLSearchParams();
-    if (filters.state?.trim()) sp.set("state", filters.state.trim());
-    fetch(`${API_BASE}/api/meta/price-histogram?${sp}`)
-      .then((r) => r.json())
+    let cancelled = false;
+    getPriceHistogram({ state: filters.state?.trim() || null })
       .then((d) => {
+        if (cancelled) return;
         setHist(d);
         if (d.price_min != null && d.price_max != null) {
           const lo = Math.floor(d.price_min);
@@ -73,6 +85,9 @@ export default function FilterSidebar({ filters, onChange }) {
         }
       })
       .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [filters.state]);
 
   const priceMin = String(filters.min_avg_price ?? "").trim() === "" ? priceDomain[0] : Number(filters.min_avg_price);
@@ -86,6 +101,10 @@ export default function FilterSidebar({ filters, onChange }) {
 
   const schMin = String(filters.min_schools ?? "").trim() === "" ? 0 : Number(filters.min_schools);
   const schMax = String(filters.max_schools ?? "").trim() === "" ? SCH_FLEX_MAX : Number(filters.max_schools);
+  const bedroomMin =
+    String(filters.min_avg_bedrooms ?? "").trim() === "" ? BEDROOM_DOMAIN[0] : Number(filters.min_avg_bedrooms);
+  const bedroomMax =
+    String(filters.max_avg_bedrooms ?? "").trim() === "" ? BEDROOM_DOMAIN[1] : Number(filters.max_avg_bedrooms);
 
   const bedSelected = (filters.bed_rounds || "").split(",").filter(Boolean);
 
@@ -102,13 +121,12 @@ export default function FilterSidebar({ filters, onChange }) {
       <div className="filter-panel">
         <div className="panel-header-row">
           <div>
-            <h2 className="panel-title">Flexible Filters</h2>
-            <p className="panel-subtitle">像 Airbnb 的筛选器一样清爽，但保留你的原始查询逻辑。</p>
+            <h2 className="panel-title">Find your fit</h2>
           </div>
           <Button
             type="button"
-            label="Reset"
-            className="p-button-text p-button-sm text-600 p-0"
+            label="Reset all"
+            className="p-button-text p-button-sm text-600 p-0 filter-reset-btn"
             onClick={clearOptionalRefine}
           />
         </div>
@@ -127,7 +145,7 @@ export default function FilterSidebar({ filters, onChange }) {
               <Dropdown
                 value={filters.state}
                 options={stateOptions}
-                onChange={(e) => update("state", e.value)}
+                onChange={(e) => update("state", e.value ?? "")}
                 optionLabel="label"
                 optionValue="value"
                 placeholder="Any State"
@@ -244,8 +262,51 @@ export default function FilterSidebar({ filters, onChange }) {
         </div>
 
         <div className="filter-section">
-          <h3 className="filter-title">Bedrooms</h3>
-          <div className="filter-chip-list">
+          <h3 className="filter-title">Home Layout</h3>
+          <Slider
+            value={[Math.min(bedroomMin, bedroomMax), Math.max(bedroomMin, bedroomMax)]}
+            onChange={(e) => {
+              const [a, b] = e.value;
+              patch({ min_avg_bedrooms: String(a), max_avg_bedrooms: String(b) });
+            }}
+            range
+            min={BEDROOM_DOMAIN[0]}
+            max={BEDROOM_DOMAIN[1]}
+            step={0.5}
+            className="w-full mb-4"
+          />
+          <div className="flex align-items-center gap-2 mb-3">
+            <div className="flex-1">
+              <InputNumber
+                value={numOrEmpty(filters.min_avg_bedrooms)}
+                onValueChange={(e) =>
+                  update("min_avg_bedrooms", e.value == null ? "" : String(e.value))
+                }
+                placeholder="Min beds"
+                className="w-full"
+                inputClassName="w-full"
+                min={0}
+                minFractionDigits={0}
+                maxFractionDigits={1}
+              />
+            </div>
+            <span className="text-500">-</span>
+            <div className="flex-1">
+              <InputNumber
+                value={numOrEmpty(filters.max_avg_bedrooms)}
+                onValueChange={(e) =>
+                  update("max_avg_bedrooms", e.value == null ? "" : String(e.value))
+                }
+                placeholder="Max beds"
+                className="w-full"
+                inputClassName="w-full"
+                min={0}
+                minFractionDigits={0}
+                maxFractionDigits={1}
+              />
+            </div>
+          </div>
+          <div className="filter-chip-list filter-chip-list--compact">
             {BED_ROUND_OPTIONS.map((o) => {
               const isSelected = bedSelected.includes(o.k);
               return (

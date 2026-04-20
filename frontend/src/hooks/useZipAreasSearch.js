@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-
-const API_BASE = "";
+import { API_BASE } from "../lib/api.js";
 
 /**
- * Fetches GET /api/zip-areas?…
- * - Aborts the previous request when `queryString` changes; those AbortErrors are ignored (not shown as "timeout").
- * - Only the in-flight request for the latest `queryString` may set loading/error/data.
+ * Fetches GET /api/zip-areas?<queryString>.
+ *
+ * - Aborts the previous request when `queryString` changes; AbortErrors do not
+ *   become UI errors.
+ * - Only the in-flight request for the latest `queryString` may set state.
+ * - `queryString` should already be URL-encoded (built by buildZipSearchQuery
+ *   or buildRecommendedZipQuery) so it matches the backend param names in
+ *   backend/app/routers/zip_areas.py::search_zip_areas.
  */
 export function useZipAreasSearch(queryString) {
   const [data, setData] = useState(null);

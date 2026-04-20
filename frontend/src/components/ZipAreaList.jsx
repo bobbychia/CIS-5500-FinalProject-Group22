@@ -1,44 +1,89 @@
+import { useEffect, useState } from "react";
 import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
 import ZipAreaCard from "./ZipAreaCard.jsx";
 import { previewResponse } from "../lib/uiPreviewData.js";
+import { getZipScoresBatch } from "../lib/api.js";
 
-const MODE_LABELS = {
-  explore: "Best Value Areas",
-  beats_state: "Strong Neighborhoods",
-  range_filters: "Balanced Neighborhoods",
-  beats_national: "High Income, Better Value",
-};
-
-function modeLabel(mode) {
-  return MODE_LABELS[mode] || mode;
-}
-
-export default function ZipAreaList({ loading, error, response, idleMessage }) {
+/**
+ * Results list.
+ *
+ * When `response` contains real results (i.e. not the preview fallback), also
+ * batch-fetches GET /api/zip-areas/scores to decorate each card with its
+ * composite score / star rating.
+ */
+export default function ZipAreaList({
+  loading,
+  error,
+  response,
+  idleMessage,
+  heading,
+  subheading,
+  hideHeader = false,
+}) {
   const showingPreview = Boolean(error) && !response?.items?.length;
   const effectiveResponse = showingPreview ? previewResponse : response;
+  const [scoreMap, setScoreMap] = useState({});
+  const totalCount = effectiveResponse?.total ?? effectiveResponse?.items?.length ?? 0;
+  const headingText = heading || (totalCount > 0 ? `${totalCount.toLocaleString()} results` : "Results");
+
+  useEffect(() => {
+    if (showingPreview) {
+      setScoreMap({});
+      return;
+    }
+    const items = effectiveResponse?.items ?? [];
+    if (!items.length) {
+      setScoreMap({});
+      return;
+    }
+    const zips = items.map((x) => x.zip_code).filter(Boolean);
+    if (!zips.length) return;
+
+    let cancelled = false;
+    getZipScoresBatch(zips)
+      .then((rows) => {
+        if (cancelled || !Array.isArray(rows)) return;
+        const m = {};
+        for (const r of rows) {
+          if (r?.zip_code) m[r.zip_code] = r;
+        }
+        setScoreMap(m);
+      })
+      .catch(() => {
+        if (!cancelled) setScoreMap({});
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    showingPreview,
+    effectiveResponse?.items?.map?.((x) => x.zip_code).join(","),
+  ]);
 
   if (idleMessage && !loading && !error) {
     return (
-      <section className="results flex flex-column align-items-center justify-content-center h-full py-8">
-        <i className="pi pi-search text-400 mb-3" style={{ fontSize: '2.5rem' }}></i>
-        <p className="text-600 font-medium text-lg">{idleMessage}</p>
+      <section className="empty-state">
+        <i className="pi pi-search empty-state__icon" />
+        <p className="empty-state__title">{idleMessage}</p>
       </section>
     );
   }
 
   if (loading) {
     return (
-      <section className="results flex flex-column align-items-center justify-content-center h-full py-8">
+      <section className="empty-state">
         <ProgressSpinner style={{ width: 50, height: 50 }} strokeWidth="4" animationDuration=".5s" />
-        <p className="mt-4 font-semibold text-lg text-800">Finding homes...</p>
+        <p className="empty-state__title">Finding homes...</p>
       </section>
     );
   }
   if (error) {
     if (!showingPreview) {
       return (
-        <section className="results py-4">
+        <section className="results-block">
           <Message severity="error" text={`Could not load results: ${error}`} className="w-full mb-3" />
           <Message severity="info" text="Ensure backend is running: uvicorn app.main:app --reload" className="w-full" />
         </section>
@@ -47,30 +92,28 @@ export default function ZipAreaList({ loading, error, response, idleMessage }) {
   }
   if (!effectiveResponse?.items?.length) {
     return (
-      <section className="results flex flex-column align-items-center justify-content-center py-8 text-center">
-        <i className="pi pi-home text-300 mb-4" style={{ fontSize: '4rem' }}></i>
-        <h2 className="m-0 text-2xl text-900 mb-2">No exact matches</h2>
-        <p className="m-0 text-600 max-w-20rem mb-4 line-height-3">
-          Try changing or removing some of your filters to see more results.
-        </p>
+      <section className="empty-state">
+        <i className="pi pi-home empty-state__icon" />
+        <h2 className="empty-state__title">No exact matches</h2>
+        <p className="empty-state__deck">Try changing or removing some of your filters to see more results.</p>
       </section>
     );
   }
 
   return (
-    <section className="results">
-      <div className="flex justify-content-between align-items-center mb-4">
-        <h2 className="m-0 text-xl font-bold text-900">
-          {effectiveResponse.total > 0 ? `${effectiveResponse.total.toLocaleString()} results` : 'Results'}
-        </h2>
-        <span className="text-600 text-sm font-medium bg-white border-1 surface-border px-3 py-1 border-round-3xl">
-          {modeLabel(effectiveResponse.search_mode)}
-        </span>
-      </div>
+    <section className="results-block">
+      {!hideHeader ? (
+        <div className="results-block__header">
+          <div>
+            <h2 className="results-title">{headingText}</h2>
+            {subheading ? <p className="results-subtitle">{subheading}</p> : null}
+          </div>
+        </div>
+      ) : null}
       <ul className="card-grid">
         {effectiveResponse.items.map((z) => (
           <li key={z.id}>
-            <ZipAreaCard area={z} />
+            <ZipAreaCard area={z} score={scoreMap[z.zip_code]} />
           </li>
         ))}
       </ul>
