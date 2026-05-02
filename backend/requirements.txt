@@ -3,6 +3,7 @@ fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
 pydantic-settings>=2.0.0
 python-dotenv>=1.0.0
+google-auth>=2.29.0
 # PostgreSQL on AWS RDS (choose one style; SQLAlchemy is flexible for complex queries)
 sqlalchemy>=2.0.0
 psycopg2-binary>=2.9.9

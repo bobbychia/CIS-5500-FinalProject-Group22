@@ -82,6 +82,7 @@ synsets1000-subgraph.txt
 # Web app (CIS 5500 final)
 backend/.venv/
 backend/.env
+frontend/.env
 frontend/node_modules/
 frontend/dist/
 .venv-pdf/

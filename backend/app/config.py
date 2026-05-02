@@ -6,6 +6,7 @@ class Settings(BaseSettings):
 
     database_url: str | None = None
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    google_client_id: str | None = None
 
 
 settings = Settings()

@@ -240,6 +240,31 @@ button {
   justify-content: flex-end;
 }
 
+.app-user {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.app-user__avatar {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.app-user__name {
+  max-width: 14rem;
+  overflow: hidden;
+  color: var(--ink-muted);
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .app-action-btn {
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.65);
@@ -258,6 +283,69 @@ button {
   transform: translateY(-1px);
   border-color: var(--ink);
   background: #fff;
+}
+
+/* ==========================================================================
+   Auth
+   ========================================================================== */
+
+.page--auth {
+  min-height: 100vh;
+}
+
+.auth-page {
+  min-height: calc(100vh - 74px);
+  display: grid;
+  place-items: center;
+  padding-block: clamp(3rem, 8vw, 6rem);
+}
+
+.auth-panel {
+  width: min(100%, 520px);
+  border: 1px solid rgba(232, 225, 213, 0.9);
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: var(--shadow-md);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.auth-title {
+  margin: 0.75rem 0 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 430;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+}
+
+.auth-copy {
+  margin: 1rem 0 1.8rem;
+  color: var(--ink-muted);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.auth-google-slot {
+  min-height: 44px;
+}
+
+.auth-message {
+  margin: 0.85rem 0 0;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+
+.auth-message--error {
+  color: var(--accent-ink);
+}
+
+.auth-back-link {
+  display: inline-flex;
+  margin-top: 1.25rem;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 /* ==========================================================================

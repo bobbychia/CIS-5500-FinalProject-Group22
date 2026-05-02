@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext.jsx";
 
 const TABS = [
   { label: "Home", path: "/", aliases: [] },
@@ -16,6 +17,7 @@ function isActive(pathname, tab) {
 export default function SearchNav() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated, signOut, user } = useAuth();
 
   function navigateWithTransition(path) {
     if (path === location.pathname) return;
@@ -65,6 +67,25 @@ export default function SearchNav() {
           })}
         </nav>
 
+        <div className="app-actions">
+          {isAuthenticated ? (
+            <div className="app-user">
+              {user?.picture ? <img src={user.picture} alt="" className="app-user__avatar" /> : null}
+              <span className="app-user__name">{user?.name || user?.email}</span>
+              <button type="button" className="app-action-btn" onClick={signOut}>
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="app-action-btn"
+              onClick={() => navigateWithTransition("/login")}
+            >
+              Sign in
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );

@@ -26,7 +26,7 @@ function buildUrl(path, params) {
   return q ? `${url}?${q}` : url;
 }
 
-async function requestJson(url, { signal, timeoutMs } = {}) {
+async function requestJson(url, { signal, timeoutMs, method = "GET", headers, body } = {}) {
   const ac = new AbortController();
   const onAbort = () => ac.abort(signal?.reason);
   if (signal) {
@@ -37,7 +37,15 @@ async function requestJson(url, { signal, timeoutMs } = {}) {
     ? setTimeout(() => ac.abort(new DOMException("Timeout", "TimeoutError")), timeoutMs)
     : null;
   try {
-    const r = await fetch(url, { signal: ac.signal });
+    const r = await fetch(url, {
+      body,
+      headers: {
+        ...(body ? { "Content-Type": "application/json" } : {}),
+        ...(headers || {}),
+      },
+      method,
+      signal: ac.signal,
+    });
     if (!r.ok) {
       const body = await r.text().catch(() => "");
       throw new Error(body || r.statusText || `HTTP ${r.status}`);
@@ -47,6 +55,14 @@ async function requestJson(url, { signal, timeoutMs } = {}) {
     if (timer) clearTimeout(timer);
     if (signal) signal.removeEventListener("abort", onAbort);
   }
+}
+
+export function verifyGoogleCredential(credential, opts) {
+  return requestJson(buildUrl("/api/auth/google"), {
+    ...opts,
+    method: "POST",
+    body: JSON.stringify({ credential }),
+  });
 }
 
 /* ---------------------------- /api/zip-areas ---------------------------- */
