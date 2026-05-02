@@ -3,12 +3,14 @@ ZIP-level search & detail — wired to Milestone 3 SQL (Location, Real_Estate, I
 """
 
 import re
+from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import text
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
+from app.db import get_session_factory
 from app.deps import require_db
 from app.schemas.zip_area import (
     EducationSummary,
@@ -45,6 +47,15 @@ class SearchMode(str, Enum):
     range_filters = "range_filters"  # Query 3
     beats_state = "beats_state"  # Query 2
     beats_national = "beats_national"  # Query 4
+
+
+def _zip_search_count_scalar(factory: sessionmaker, count_sql: str, count_params: dict):
+    """Run COUNT query on its own Session (must not share the request Session across threads)."""
+    s = factory()
+    try:
+        return s.execute(text(count_sql), count_params).scalar_one()
+    finally:
+        s.close()
 
 
 def _row_to_card(row: dict, mode: SearchMode) -> ZipAreaCard:
@@ -136,9 +147,16 @@ def search_zip_areas(
         count_params = {**explore_filters}
         main_params = {**explore_filters, "limit": limit, "offset": offset}
 
+    factory = get_session_factory()
+    if factory is None:
+        raise HTTPException(status_code=503, detail="Database not configured.")
+
     try:
-        total = db.execute(text(count_sql), count_params).scalar_one()
-        rows = db.execute(text(main_sql), main_params).mappings().all()
+        # COUNT and list query are independent: overlap wall time (count uses a second pooled Session).
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            fut_count = pool.submit(_zip_search_count_scalar, factory, count_sql, count_params)
+            rows = db.execute(text(main_sql), main_params).mappings().all()
+            total = fut_count.result()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database query failed: {e!s}") from e
 

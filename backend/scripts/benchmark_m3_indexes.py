@@ -34,6 +34,7 @@ INDEX_NAMES = [
     "idx_m3_real_estate_zip_beds_ok",
     "idx_m3_real_estate_zip_ppsqft_ok",
     "idx_m3_real_estate_zip_price_ok",
+    "idx_m3_location_state_norm",
     "idx_m3_location_state",
 ]
 

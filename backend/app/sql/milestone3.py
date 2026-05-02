@@ -380,11 +380,7 @@ NationalBenchmarks AS (
 ),
 NationalIncome AS (
     SELECT AVG(total_income) AS national_avg_total_income
-    FROM (
-        SELECT zip_code, SUM(total_income) AS total_income
-        FROM IRS_Income
-        GROUP BY zip_code
-    ) t
+    FROM IncomeSummary
 ),
 SchoolSummary AS (
     SELECT zip_code, COUNT(*)::int AS num_schools
@@ -462,11 +458,7 @@ NationalBenchmarks AS (
 ),
 NationalIncome AS (
     SELECT AVG(total_income) AS national_avg_total_income
-    FROM (
-        SELECT zip_code, SUM(total_income) AS total_income
-        FROM IRS_Income
-        GROUP BY zip_code
-    ) t
+    FROM IncomeSummary
 ),
 SchoolSummary AS (
     SELECT zip_code, COUNT(*)::int AS num_schools
