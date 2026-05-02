@@ -83,6 +83,7 @@ synsets1000-subgraph.txt
 backend/.venv/
 backend/.env
 frontend/.env
+frontend/.vercel/
 frontend/node_modules/
 frontend/dist/
 .venv-pdf/

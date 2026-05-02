@@ -53,6 +53,28 @@ Vercel settings:
 - Build Command: `npm run build`
 - Output Directory: `dist`
 
+## Frontend CI/CD
+
+The repo includes `.github/workflows/frontend-vercel.yml`. On pull requests it builds the frontend; on pushes to `main` that touch `frontend/**`, it builds and deploys the frontend to Vercel.
+
+Add these GitHub Actions secrets in GitHub repo settings:
+
+```bash
+VERCEL_TOKEN=your-vercel-token
+VERCEL_ORG_ID=your-vercel-org-id
+VERCEL_PROJECT_ID=your-vercel-project-id
+```
+
+You can get the IDs locally after linking the Vercel project:
+
+```bash
+cd frontend
+npx vercel link
+cat .vercel/project.json
+```
+
+Do not commit `.vercel/project.json`; copy the values into GitHub secrets instead.
+
 ## Local Run
 
 Backend:
