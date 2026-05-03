@@ -73,6 +73,8 @@ class ZipDetailResponse(BaseModel):
     """ZIP drill-down: combines M3 queries 7–10."""
 
     zip_code: str
+    city: str | None = Field(default=None, description="Primary city label from Location (for UI hero copy)")
+    state: str | None = Field(default=None, description="State from Location (for UI hero copy)")
     housing: HousingSummary | None = None
     education: EducationSummary | None = None
     irs_totals: IrsTotals | None = None

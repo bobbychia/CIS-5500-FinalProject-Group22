@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import CitySearch from "../components/CitySearch.jsx";
 import SearchNav from "../components/SearchNav.jsx";
 import { useDebouncedValue } from "../hooks/useDebouncedValue.js";
-import { getStates, getZipsRankedByIncome, getZipsRankedByPrice, zipThumbUrl } from "../lib/api.js";
+import { cityFeatureImage, getStates, getZipsRankedByIncome, getZipsRankedByPrice } from "../lib/api.js";
 import "../App.css";
 
 const MODE_OPTIONS = [
@@ -187,7 +187,12 @@ export default function RankingsPage() {
                 >
                   <div className="magazine-entry__media">
                     <img
-                      src={row.thumb_url || zipThumbUrl(row.zip_code)}
+                      src={cityFeatureImage({
+                        city: row.city,
+                        state: row.state,
+                        thumbUrl: row.thumb_url,
+                        zipCode: row.zip_code,
+                      })}
                       alt={`ZIP ${row.zip_code}`}
                       loading="lazy"
                     />

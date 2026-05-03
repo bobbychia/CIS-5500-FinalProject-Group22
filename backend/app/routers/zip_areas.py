@@ -365,12 +365,33 @@ def zip_detail(zip_code: str, db: Session = Depends(require_db)):
 
     p = {"zip": z}
     try:
+        loc = db.execute(
+            text(
+                """
+                SELECT TRIM(city) AS city, TRIM(state) AS state
+                FROM Location
+                WHERE zip_code = :zip
+                LIMIT 1
+                """
+            ),
+            p,
+        ).mappings().first()
         h = db.execute(text(sql.SQL_QUERY7), p).mappings().first()
         e = db.execute(text(sql.SQL_QUERY8), p).mappings().first()
         ir = db.execute(text(sql.SQL_QUERY9), p).mappings().first()
         br = db.execute(text(sql.SQL_QUERY10), p).mappings().all()
     except Exception as ex:
         raise HTTPException(status_code=500, detail=f"Database query failed: {ex!s}") from ex
+
+    loc_city = None
+    loc_state = None
+    if loc:
+        c = loc.get("city")
+        s = loc.get("state")
+        if c is not None and str(c).strip():
+            loc_city = str(c).strip()
+        if s is not None and str(s).strip():
+            loc_state = str(s).strip()
 
     housing = None
     if h:
@@ -433,6 +454,8 @@ def zip_detail(zip_code: str, db: Session = Depends(require_db)):
 
     return ZipDetailResponse(
         zip_code=z,
+        city=loc_city,
+        state=loc_state,
         housing=housing,
         education=education,
         irs_totals=irs_totals,
