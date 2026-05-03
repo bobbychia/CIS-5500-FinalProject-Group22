@@ -91,7 +91,18 @@ def _all_queries() -> list[tuple[str, str, dict]]:
         "limit": 30,
         "offset": 0,
     }
-    q3 = {"city": None, "state": "PA", "limit": 30, "offset": 0}
+    q3 = {
+        "city": None,
+        "state": "PA",
+        "min_avg_price_q3": 0,
+        "max_avg_price_q3": 999_999_999,
+        "min_total_income_q3": 0,
+        "max_total_income_q3": 999_999_999_999,
+        "min_schools_q3": 0,
+        "max_schools_q3": 999_999,
+        "limit": 30,
+        "offset": 0,
+    }
     rank = {"state": "PA", "city": None, "limit": 50, "offset": 0}
     zp = {"zip": "19104"}
     return [
