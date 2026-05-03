@@ -172,7 +172,7 @@ def search_zip_areas(
 
 @router.get("/{zip_code}/score", response_model=ZipScoreResponse)
 def zip_score(zip_code: str, db: Session = Depends(require_db)):
-    """Composite score and star rating for one ZIP (value/income/school weighted)."""
+    """Cached composite score and star rating for one ZIP."""
     z = zip_code.strip()
     if not z.isdigit() or len(z) != 5:
         raise HTTPException(status_code=400, detail="zip_code must be a 5-digit string")

@@ -560,112 +560,24 @@ WHERE zip_code = :zip
 ORDER BY income_bracket
 """
 
-# --- Query 5.5: Composite score and star rating for one ZIP ---
+# --- Cached composite score and star rating ---
 SQL_QUERY_SCORE_BATCH = """
-WITH Base AS (
-    SELECT
-        l.zip_code,
-        AVG(r.price) AS avg_price,
-        SUM(i.total_income) AS total_income,
-        COUNT(DISTINCT e.school_id) AS school_count,
-        AVG(e.enrollment) AS avg_enrollment
-    FROM Location l
-    JOIN Real_Estate r ON l.zip_code = r.zip_code
-    JOIN IRS_Income i ON l.zip_code = i.zip_code
-    LEFT JOIN Education e ON l.zip_code = e.zip_code
-    WHERE r.price IS NOT NULL AND r.price >= 50000
-    GROUP BY l.zip_code
-),
-ValueCalc AS (
-    SELECT *, total_income::numeric / NULLIF(avg_price, 0) AS value_ratio
-    FROM Base
-),
-Stats AS (
-    SELECT
-        MIN(value_ratio) AS min_val, MAX(value_ratio) AS max_val,
-        MIN(total_income) AS min_inc, MAX(total_income) AS max_inc,
-        MIN(school_count) AS min_sch, MAX(school_count) AS max_sch
-    FROM ValueCalc
-),
-Normalized AS (
-    SELECT
-        v.zip_code,
-        (v.value_ratio - s.min_val) / NULLIF(s.max_val - s.min_val, 0) AS value_score,
-        (v.total_income - s.min_inc) / NULLIF(s.max_inc - s.min_inc, 0) AS income_score,
-        (v.school_count - s.min_sch) / NULLIF(s.max_sch - s.min_sch, 0) AS school_score
-    FROM ValueCalc v CROSS JOIN Stats s
-),
-FinalScore AS (
-    SELECT *,
-        (0.5 * value_score + 0.3 * income_score + 0.2 * school_score) AS final_score
-    FROM Normalized
-)
 SELECT
-    zip_code,
-    ROUND(final_score::numeric, 4) AS final_score,
-    CASE
-        WHEN final_score < 0.2 THEN 1
-        WHEN final_score < 0.4 THEN 2
-        WHEN final_score < 0.6 THEN 3
-        WHEN final_score < 0.8 THEN 4
-        ELSE 5
-    END AS star_rating
-FROM FinalScore
-WHERE zip_code = ANY(:zips)
+    zip_code::text AS zip_code,
+    raw_score::float AS final_score,
+    raw_score_grade::int AS star_rating
+FROM zip_score_result
+WHERE zip_code::text = ANY(:zips)
+ORDER BY raw_score DESC
 """
 
 SQL_QUERY_SCORE = """
-WITH Base AS (
-    SELECT
-        l.zip_code,
-        AVG(r.price) AS avg_price,
-        SUM(i.total_income) AS total_income,
-        COUNT(DISTINCT e.school_id) AS school_count,
-        AVG(e.enrollment) AS avg_enrollment
-    FROM Location l
-    JOIN Real_Estate r ON l.zip_code = r.zip_code
-    JOIN IRS_Income i ON l.zip_code = i.zip_code
-    LEFT JOIN Education e ON l.zip_code = e.zip_code
-    WHERE r.price IS NOT NULL AND r.price >= 50000
-    GROUP BY l.zip_code
-),
-ValueCalc AS (
-    SELECT *,
-        total_income::numeric / NULLIF(avg_price, 0) AS value_ratio
-    FROM Base
-),
-Stats AS (
-    SELECT
-        MIN(value_ratio) AS min_val, MAX(value_ratio) AS max_val,
-        MIN(total_income) AS min_inc, MAX(total_income) AS max_inc,
-        MIN(school_count) AS min_sch, MAX(school_count) AS max_sch
-    FROM ValueCalc
-),
-Normalized AS (
-    SELECT
-        v.zip_code,
-        (v.value_ratio - s.min_val) / NULLIF(s.max_val - s.min_val, 0) AS value_score,
-        (v.total_income - s.min_inc) / NULLIF(s.max_inc - s.min_inc, 0) AS income_score,
-        (v.school_count - s.min_sch) / NULLIF(s.max_sch - s.min_sch, 0) AS school_score
-    FROM ValueCalc v CROSS JOIN Stats s
-),
-FinalScore AS (
-    SELECT *,
-        (0.5 * value_score + 0.3 * income_score + 0.2 * school_score) AS final_score
-    FROM Normalized
-)
 SELECT
-    zip_code,
-    ROUND(final_score::numeric, 4) AS final_score,
-    CASE
-        WHEN final_score < 0.2 THEN 1
-        WHEN final_score < 0.4 THEN 2
-        WHEN final_score < 0.6 THEN 3
-        WHEN final_score < 0.8 THEN 4
-        ELSE 5
-    END AS star_rating
-FROM FinalScore
-WHERE zip_code = :zip
+    zip_code::text AS zip_code,
+    raw_score::float AS final_score,
+    raw_score_grade::int AS star_rating
+FROM zip_score_result
+WHERE zip_code::text = :zip
 """
 
 # --- Query 5: ZIP codes ranked by total income ---
