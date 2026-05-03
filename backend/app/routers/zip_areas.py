@@ -136,7 +136,16 @@ def search_zip_areas(
         main_params = {**explore_filters, "limit": limit, "offset": offset}
     elif search_mode == SearchMode.range_filters:
         count_sql, main_sql = sql.SQL_QUERY3_COUNT, sql.SQL_QUERY3
-        count_params = {"city": city_p, "state": state_upper}
+        count_params = {
+            "city": city_p,
+            "state": state_upper,
+            "min_avg_price_q3": min_avg_price_q3,
+            "max_avg_price_q3": max_avg_price_q3,
+            "min_total_income_q3": min_total_income_q3,
+            "max_total_income_q3": max_total_income_q3,
+            "min_schools_q3": min_schools_q3,
+            "max_schools_q3": max_schools_q3,
+        }
         main_params = {**count_params, "limit": limit, "offset": offset}
     elif search_mode == SearchMode.beats_state:
         count_sql, main_sql = sql.SQL_QUERY2_COUNT, sql.SQL_QUERY2

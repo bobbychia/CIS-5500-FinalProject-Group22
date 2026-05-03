@@ -139,10 +139,26 @@ WHERE l.zip_code IN (SELECT zip_code FROM LocationScope)
 
 # --- Query 3 (complex): multi-range filter ---
 SQL_QUERY3 = """
-WITH HousingSummary AS (
+WITH LocationScope AS (
+    SELECT zip_code
+    FROM Location
+    WHERE (:state IS NULL OR UPPER(TRIM(state)) = UPPER(TRIM(:state)))
+      AND (
+        :city IS NULL
+        OR LOWER(TRIM(city)) LIKE '%' || LOWER(TRIM(:city)) || '%'
+      )
+),
+HousingSummary AS (
     SELECT zip_code, AVG(price) AS avg_housing_price
     FROM Real_Estate
     WHERE price IS NOT NULL AND price >= 50000
+      AND zip_code IN (SELECT zip_code FROM LocationScope)
+    GROUP BY zip_code
+),
+IncomeSummary AS (
+    SELECT zip_code, SUM(total_income) AS total_income
+    FROM IRS_Income
+    WHERE zip_code IN (SELECT zip_code FROM LocationScope)
     GROUP BY zip_code
 ),
 SchoolSummary AS (
@@ -150,41 +166,55 @@ SchoolSummary AS (
            AVG(CASE WHEN enrollment > 0 THEN enrollment END) AS avg_school_enrollment,
            COUNT(*) AS num_schools
     FROM Education
+    WHERE zip_code IN (SELECT zip_code FROM LocationScope)
     GROUP BY zip_code
-),
-NationalBenchmarks AS (
-    SELECT
-        (SELECT AVG(avg_housing_price) FROM HousingSummary) AS national_avg_housing_price,
-        (SELECT AVG(avg_school_enrollment) FROM SchoolSummary WHERE avg_school_enrollment IS NOT NULL) AS national_avg_school_enrollment
 )
 SELECT
     l.zip_code,
     l.city,
     l.state,
     h.avg_housing_price,
+    i.total_income,
+    COALESCE(s.num_schools, 0)::int AS num_schools,
     s.avg_school_enrollment,
-    s.num_schools,
-    NULL::float AS total_income,
-    NULL::float AS income_price_ratio,
+    (i.total_income::numeric / NULLIF(h.avg_housing_price, 0)) AS income_price_ratio,
     NULL::float AS avg_price_per_sqft
 FROM Location l
 JOIN HousingSummary h ON l.zip_code = h.zip_code
-JOIN SchoolSummary s ON l.zip_code = s.zip_code
-CROSS JOIN NationalBenchmarks nb
-WHERE h.avg_housing_price > nb.national_avg_housing_price
-  AND s.avg_school_enrollment < nb.national_avg_school_enrollment
-  AND s.num_schools >= 3
-  AND (:city IS NULL OR LOWER(TRIM(l.city)) LIKE '%' || LOWER(TRIM(:city)) || '%')
-  AND (:state IS NULL OR UPPER(TRIM(l.state)) = UPPER(TRIM(:state)))
-ORDER BY h.avg_housing_price DESC, s.avg_school_enrollment ASC
+JOIN IncomeSummary i ON l.zip_code = i.zip_code
+LEFT JOIN SchoolSummary s ON l.zip_code = s.zip_code
+WHERE l.zip_code IN (SELECT zip_code FROM LocationScope)
+  AND h.avg_housing_price >= :min_avg_price_q3
+  AND h.avg_housing_price <= :max_avg_price_q3
+  AND i.total_income >= :min_total_income_q3
+  AND i.total_income <= :max_total_income_q3
+  AND COALESCE(s.num_schools, 0) >= :min_schools_q3
+  AND COALESCE(s.num_schools, 0) <= :max_schools_q3
+ORDER BY h.avg_housing_price ASC, i.total_income DESC, COALESCE(s.num_schools, 0) DESC
 LIMIT :limit OFFSET :offset
 """
 
 SQL_QUERY3_COUNT = """
-WITH HousingSummary AS (
+WITH LocationScope AS (
+    SELECT zip_code
+    FROM Location
+    WHERE (:state IS NULL OR UPPER(TRIM(state)) = UPPER(TRIM(:state)))
+      AND (
+        :city IS NULL
+        OR LOWER(TRIM(city)) LIKE '%' || LOWER(TRIM(:city)) || '%'
+      )
+),
+HousingSummary AS (
     SELECT zip_code, AVG(price) AS avg_housing_price
     FROM Real_Estate
     WHERE price IS NOT NULL AND price >= 50000
+      AND zip_code IN (SELECT zip_code FROM LocationScope)
+    GROUP BY zip_code
+),
+IncomeSummary AS (
+    SELECT zip_code, SUM(total_income) AS total_income
+    FROM IRS_Income
+    WHERE zip_code IN (SELECT zip_code FROM LocationScope)
     GROUP BY zip_code
 ),
 SchoolSummary AS (
@@ -192,23 +222,21 @@ SchoolSummary AS (
            AVG(CASE WHEN enrollment > 0 THEN enrollment END) AS avg_school_enrollment,
            COUNT(*) AS num_schools
     FROM Education
+    WHERE zip_code IN (SELECT zip_code FROM LocationScope)
     GROUP BY zip_code
-),
-NationalBenchmarks AS (
-    SELECT
-        (SELECT AVG(avg_housing_price) FROM HousingSummary) AS national_avg_housing_price,
-        (SELECT AVG(avg_school_enrollment) FROM SchoolSummary WHERE avg_school_enrollment IS NOT NULL) AS national_avg_school_enrollment
 )
 SELECT COUNT(*)::int AS cnt
 FROM Location l
 JOIN HousingSummary h ON l.zip_code = h.zip_code
-JOIN SchoolSummary s ON l.zip_code = s.zip_code
-CROSS JOIN NationalBenchmarks nb
-WHERE h.avg_housing_price > nb.national_avg_housing_price
-  AND s.avg_school_enrollment < nb.national_avg_school_enrollment
-  AND s.num_schools >= 3
-  AND (:city IS NULL OR LOWER(TRIM(l.city)) LIKE '%' || LOWER(TRIM(:city)) || '%')
-  AND (:state IS NULL OR UPPER(TRIM(l.state)) = UPPER(TRIM(:state)))
+JOIN IncomeSummary i ON l.zip_code = i.zip_code
+LEFT JOIN SchoolSummary s ON l.zip_code = s.zip_code
+WHERE l.zip_code IN (SELECT zip_code FROM LocationScope)
+  AND h.avg_housing_price >= :min_avg_price_q3
+  AND h.avg_housing_price <= :max_avg_price_q3
+  AND i.total_income >= :min_total_income_q3
+  AND i.total_income <= :max_total_income_q3
+  AND COALESCE(s.num_schools, 0) >= :min_schools_q3
+  AND COALESCE(s.num_schools, 0) <= :max_schools_q3
 """
 
 # --- Query 2 (complex): below state avg price, above state avg income, 3+ schools ---
