@@ -330,6 +330,27 @@ button {
   min-height: 44px;
 }
 
+.auth-native-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 360px;
+  padding: 0.65rem 1.25rem;
+  border: 1px solid #dadce0;
+  border-radius: 9999px;
+  background: #fff;
+  color: #3c4043;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.auth-native-btn:hover {
+  background: #f8f9fa;
+}
+
 .auth-message {
   margin: 0.85rem 0 0;
   color: var(--ink-muted);

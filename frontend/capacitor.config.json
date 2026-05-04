@@ -1,0 +1,12 @@
+{
+  "appId": "com.cis5500.idealnest",
+  "appName": "IdealNest",
+  "webDir": "dist",
+  "plugins": {
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "24402092891-98l95s69g6hha8900gn1jp9aog85ck0l.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    }
+  }
+}

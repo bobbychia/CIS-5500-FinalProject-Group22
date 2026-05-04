@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SearchNav from "../components/SearchNav.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
@@ -7,12 +7,12 @@ import "../App.css";
 const GOOGLE_SCRIPT_ID = "google-identity-services";
 const GOOGLE_CLIENT_ID =
   typeof import.meta !== "undefined" ? import.meta.env.VITE_GOOGLE_CLIENT_ID : "";
+const isCapacitor = typeof window !== "undefined" && Boolean(window.Capacitor);
 
 function loadGoogleScript() {
   if (document.getElementById(GOOGLE_SCRIPT_ID)) {
     return Promise.resolve();
   }
-
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
     script.id = GOOGLE_SCRIPT_ID;
@@ -36,7 +36,20 @@ export default function LoginPage() {
     if (isAuthenticated) navigate(from, { replace: true });
   }, [from, isAuthenticated, navigate]);
 
+  const handleNativeSignIn = useCallback(async () => {
+    try {
+      const { GoogleAuth } = await import("@codetrix-studio/capacitor-google-auth");
+      const googleUser = await GoogleAuth.signIn();
+      const credential = googleUser.authentication.idToken;
+      await signInWithGoogle(credential);
+      navigate(from, { replace: true });
+    } catch (err) {
+      console.error("Native Google sign-in failed", err);
+    }
+  }, [from, navigate, signInWithGoogle]);
+
   useEffect(() => {
+    if (isCapacitor) return;
     let cancelled = false;
 
     async function renderButton() {
@@ -86,13 +99,19 @@ export default function LoginPage() {
             school, and income insights.
           </p>
 
-          <div className="auth-google-slot" ref={buttonRef}>
-            {!GOOGLE_CLIENT_ID ? (
-              <p className="auth-message">
-                Add <code>VITE_GOOGLE_CLIENT_ID</code> to the frontend environment first.
-              </p>
-            ) : null}
-          </div>
+          {isCapacitor ? (
+            <button className="auth-native-btn" onClick={handleNativeSignIn}>
+              Sign in with Google
+            </button>
+          ) : (
+            <div className="auth-google-slot" ref={buttonRef}>
+              {!GOOGLE_CLIENT_ID ? (
+                <p className="auth-message">
+                  Add <code>VITE_GOOGLE_CLIENT_ID</code> to the frontend environment first.
+                </p>
+              ) : null}
+            </div>
+          )}
 
           {status === "loading" ? <p className="auth-message">Signing you in...</p> : null}
           {error ? <p className="auth-message auth-message--error">{error}</p> : null}
