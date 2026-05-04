@@ -2,6 +2,8 @@
 
 Web application for **CIS 5500 (Spring 2026)**: explore U.S. ZIP–level housing and neighborhood data with a **FastAPI** backend (PostgreSQL on AWS RDS) and a **React (Vite)** frontend (PrimeReact).
 
+**Live site**: https://cis-5500-final-project-group22.vercel.app/
+
 - **Flexible search** (`/`): filter ZIP areas with sliders and text inputs (debounced requests to the API).
 - **Recommended searches** (`/recommended`): the four Milestone 3 preset queries with preset-specific parameters only.
 - **ZIP detail** (`/zip/:zipCode`): drill-down for a single ZIP code.
